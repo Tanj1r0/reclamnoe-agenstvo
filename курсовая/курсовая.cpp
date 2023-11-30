@@ -1,4 +1,4 @@
-﻿#include <iostream>
+#include <iostream>
 #include <fstream>
 #include <vector>
 #include <algorithm>
@@ -99,12 +99,13 @@ int main() {
     }
 
     int choice = 0;
-    while (choice != 5) {
+    while (choice != 6) {
         std::cout << "1. Поиск рекламы\n";
         std::cout << "2. Сортировка рекламы\n";
         std::cout << "3. Вывод всех объявлений\n";
         std::cout << "4. Добавить рекламу\n";
-        std::cout << "5. Выход\n";
+        std::cout << "5. Сохранить в файл CSV\n";
+        std::cout << "6. Выход\n";
         std::cout << "Введите номер пункта меню: ";
         while (!(std::cin >> choice)) {
             std::cout << "Некорректный ввод. Пожалуйста, введите число: ";
@@ -211,6 +212,27 @@ int main() {
             }
         }
         else if (choice == 5) {
+            std::string fileName;
+            std::cout << "Введите название файла : ";
+            std::cin >> fileName;
+
+            std::ofstream csvFile(fileName);
+            if (csvFile.is_open()) {
+                for (const auto& advertisement : advertisements) {
+                    csvFile << advertisement.getProduct() << " ; "
+                        << advertisement.getStartDate() << " ; "
+                        << advertisement.getDuration() << " ; "
+                        << advertisement.getAvailableSlots() << " ; "
+                        << advertisement.getPrice() << "\n";
+                }
+                csvFile.close();
+                std::cout << "Данные сохранены в файле " << fileName << "\n";
+            }
+            else {
+                std::cout << "Ошибка открытия файла для сохранения CSV.\n";
+            }
+        }
+        else if (choice == 6) {
             break;
         }
         else {
