@@ -6,6 +6,11 @@
 #include <sstream>
 #include <Windows.h>
 #include <locale>
+#include <regex>
+#include <ctime>
+#include <iomanip>
+#include <chrono>
+#include <cctype>
 
 class Advertisement {
 private:
@@ -68,6 +73,51 @@ public:
         return lowerCaseData.find(lowerCaseSubstring) != std::string::npos;
     }
 };
+
+#include <iostream>
+#include <sstream>
+#include <ctime>
+
+bool isValidDate(const std::string& dateStr) {
+    std::tm tm = {};
+    std::istringstream ss(dateStr);
+    ss >> std::get_time(&tm, "%Y-%m-%d");
+
+    if (ss.fail()) {
+        std::cout << "Ошибка формата даты. Пожалуйста, введите дату в формате гггг-мм-дд.\n";
+        return false;
+    }
+
+    int year = tm.tm_year + 1900;
+    int month = tm.tm_mon + 1;
+    int day = tm.tm_mday;
+
+    if (month < 1 || month > 12) {
+        std::cout << "Некорректный месяц. Месяц должен быть в пределах от 1 до 12.\n";
+        return false;
+    }
+
+    int daysInMonth;
+    if (month == 1 || month == 3 || month == 5 || month == 7 || month == 8 || month == 10 || month == 12) {
+        daysInMonth = 31;
+    }
+    else if (month == 4 || month == 6 || month == 9 || month == 11) {
+        daysInMonth = 30;
+    }
+    else if ((year % 4 == 0 && year % 100 != 0) || (year % 400 == 0)) {
+        daysInMonth = 29; // Високосный год
+    }
+    else {
+        daysInMonth = 28;
+    }
+
+    if (day < 1 || day > daysInMonth) {
+        std::cout << "Некорректный день для выбранного месяца.\n";
+        return false;
+    }
+
+    return true;
+}
 
 int main() {
     system("chcp 1251");
@@ -181,23 +231,59 @@ int main() {
             std::string product, startDate, duration, availableSlots, price;
             std::cin.ignore();
 
-            std::cout << "Введите продукт рекламы: ";
-            std::getline(std::cin, product);
-            std::cout << "Введите дату начала: ";
-            std::getline(std::cin, startDate);
-            std::cout << "Введите продолжительность (в днях): ";
-            std::getline(std::cin, duration);
+            // Проверка корректности ввода продукта
+            do {
+                std::cout << "Введите продукт рекламы: ";
+                std::getline(std::cin, product);
+            } while (product.empty());  // Повторять ввод, пока строка не будет непустой
 
-            std::cout << "Введите количество доступных слотов: ";
-            std::getline(std::cin, availableSlots);
+            // Проверка корректности ввода даты
+            do {
+                std::cout << "Введите дату начала (гггг-мм-дд): ";
+                std::getline(std::cin, startDate);
+            } while (!isValidDate(startDate));
 
-            std::cout << "Введите цену рекламы: ";
-            std::getline(std::cin, price);
+            // Проверка корректности ввода длительности (положительное число)
+            // Проверка корректности ввода длительности (положительное число)
+            while (true) {
+                try {
+                    std::cout << "Введите продолжительность (в днях): ";
+                    std::getline(std::cin, duration);
+                    if (std::all_of(duration.begin(), duration.end(), ::isdigit)) {
+                        int durationValue = std::stoi(duration);
+                        if (durationValue > 0) {
+                            break;
+                        }
+                        else {
+                            std::cout << "Длительность должна быть положительным числом. Пожалуйста, введите корректное значение.\n";
+                        }
+                    }
+                    else {
+                        std::cout << "Некорректный ввод. Пожалуйста, введите число для длительности.\n";
+                    }
+                }
+                catch (const std::exception& e) {
+                    std::cout << "Некорректный ввод. Пожалуйста, введите число для длительности.\n";
+                }
+            }
+
+            // Проверка корректности ввода доступных слотов
+            do {
+                std::cout << "Введите количество доступных слотов: ";
+                std::getline(std::cin, availableSlots);
+            } while (availableSlots.empty() || !std::all_of(availableSlots.begin(), availableSlots.end(), ::isdigit));
+
+            // Проверка корректности ввода цены
+            do {
+                std::cout << "Введите цену рекламы: ";
+                std::getline(std::cin, price);
+            } while (price.empty() || !std::all_of(price.begin(), price.end(), ::isdigit));
 
             Advertisement newAdvertisement(product, startDate, duration, availableSlots, price);
             advertisements.push_back(newAdvertisement);
             std::cout << "Реклама добавлена.\n";
 
+            // Открытие файла для добавления данных новой рекламы
             std::ofstream outputFile("advertisements_data.txt", std::ios::out | std::ios::app);
             if (outputFile.is_open()) {
                 // Запись данных новой рекламы в файл
